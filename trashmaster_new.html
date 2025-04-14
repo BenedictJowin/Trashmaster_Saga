@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TRASHMASTER SAGA</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #d4e8d4;
+            font-family: Arial, sans-serif;
+        }
+        #gameContainer {
+            position: relative;
+            margin-top: 20px;
+            display: none; /* Hidden initially */
+        }
+        #gameCanvas {
+            border: 2px solid #333;
+            background-color: #87ceeb;
+            border-radius: 10px;
+        }
+        #scoreBoard {
+            font-size: 28px;
+            margin: 10px;
+            color: #333;
+            text-shadow: 1px 1px 2px #fff;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 15px;
+            border-radius: 5px;
+            display: none; /* Hidden initially */
+        }
+        #objective {
+            font-size: 20px;
+            margin: 5px;
+            color: #333;
+            text-shadow: 1px 1px 2px #fff;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 15px;
+            border-radius: 5px;
+            display: none; /* Hidden initially */
+        }
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            background: linear-gradient(135deg, #f0f8ff, #e6e6fa);
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none;
+            text-align: center;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+            color: #2f4f4f;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            border: 3px solid #4682b4;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        #playAgainButton {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #008000;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #playAgainButton:hover {
+            background-color: #006600;
+        }
+        #powerMeter {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 200px;
+            height: 30px;
+            background: #333;
+            border-radius: 5px;
+            padding: 5px;
+        }
+        #powerFill {
+            height: 100%;
+            background: linear-gradient(to right, #ff4444, #ff9999);
+            border-radius: 3px;
+            transition: width 0.1s;
+        }
+        #introScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #4CAF50, #2196F3, #FF9800);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            overflow: hidden;
+            animation: bgShift 10s ease infinite;
+        }
+        @keyframes bgShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        #introScreen h1 {
+            font-size: 90px;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(33,150,243,0.5), 4px 4px 8px rgba(0,0,0,0.5);
+            font-family: 'Impact', sans-serif;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 50px;
+            position: relative;
+            animation: epicTitle 2s ease-in-out infinite;
+        }
+        @keyframes epicTitle {
+            0% { transform: scale(1); text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(33,150,243,0.5); }
+            50% { transform: scale(1.05); text-shadow: 0 0 15px rgba(255,255,255,1), 0 0 25px rgba(33,150,243,0.7); }
+            100% { transform: scale(1); text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(33,150,243,0.5); }
+        }
+        #introScreen button, #howToPlayOverlay button {
+            padding: 18px 45px;
+            font-size: 28px;
+            margin: 15px;
+            background: linear-gradient(90deg, #2196F3, #4CAF50);
+            color: #fff;
+            border: 3px solid #1E88E5;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(33,150,243,0.5), inset 0 0 8px rgba(255,255,255,0.2);
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+        #introScreen button:hover, #howToPlayOverlay button:hover {
+            background: linear-gradient(90deg, #1E88E5, #388E3C);
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(33,150,243,0.8), inset 0 0 12px rgba(255,255,255,0.4);
+            border-color: #388E3C;
+        }
+        #introScreen button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: all 0.5s ease;
+        }
+        #introScreen button:hover::before {
+            left: 100%;
+        }
+        #howToPlayOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+        }
+        #howToPlayBox {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 500px;
+        }
+        #howToPlayBox h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        #howToPlayBox p {
+            margin: 10px 0;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="introScreen">
+        <h1>Trashmaster Saga</h1>
+        <button id="howToPlayButton">How to Play</button>
+        <button id="playButtonIntro">Play</button>
+    </div>
+    <div id="scoreBoard">Score: 0 | Misses: 0 | Combo: 0x</div>
+    <div id="objective">Objective: Reach 50 points to win!</div>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="message"></div>
+        <div id="powerMeter">
+            <div id="powerFill"></div>
+        </div>
+    </div>
+    <div id="howToPlayOverlay">
+        <div id="howToPlayBox">
+            <h2>How to Play</h2>
+            <p>Welcome to TRASHMASTER SAGA! Sort waste into the correct bins to score points.</p>
+            <p><strong>Controls:</strong></p>
+            <p>- Use <strong>A</strong> and <strong>D</strong> keys to aim left or right (red line shows direction).</p>
+            <p>- Click and hold the <strong>mouse</strong> to charge power (green line shows trajectory), release to throw.</p>
+            <p><strong>Objective:</strong></p>
+            <p>- Throw trash into the correct bin: Recycling (blue), Compost (green), or Waste (gray).</p>
+            <p>- Reach 50 points to win the game!</p>
+            <button id="backButton">Back</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreBoard = document.getElementById('scoreBoard');
+        const objectiveDisplay = document.getElementById('objective');
+        const message = document.getElementById('message');
+        const powerFill = document.getElementById('powerFill');
+        const introScreen = document.getElementById('introScreen');
+        const howToPlayOverlay = document.getElementById('howToPlayOverlay');
+        const howToPlayButton = document.getElementById('howToPlayButton');
+        const playButtonIntro = document.getElementById('playButtonIntro');
+        const backButton = document.getElementById('backButton');
+        const gameContainer = document.getElementById('gameContainer');
+
+        // Game state
+        let score = 0;
+        let misses = 0;
+        let combo = 0;
+        let trash = null;
+        let power = 0;
+        let chargingPower = false;
+        let angle = 0;
+        let directionLocked = false;
+        let gameOver = false;
+        const targetScore = 50;
+        let messageTimeout = null;
+
+        const bins = [
+            { x: 200, y: 470, width: 100, height: 150, type: 'recycling', binImage: 'images/dustbin2.png', lidImage: 'images/dustbin2_lid.png', lidAngle: 0, targetLidAngle: 0 },
+            { x: 350, y: 470, width: 100, height: 150, type: 'compost', binImage: 'images/dustbin.png', lidImage: 'images/dustbin_lid.png', lidAngle: 0, targetLidAngle: 0 },
+            { x: 500, y: 465, width: 95, height: 145, type: 'waste', binImage: 'images/dustbin1.png', lidImage: 'images/dustbin1_lid.png', lidAngle: 0, targetLidAngle: 0 }
+        ];
+
+        const trashTypes = [
+            { name: 'PLASTIC BOTTLE', correctBin: 'recycling', size: 100, image: 'images/plastic_bottle.png', bonus: 0 },
+            { name: 'GLASS JAR', correctBin: 'recycling', size: 100, image: 'images/glass_jar.png', bonus: 0 },
+            { name: 'ALUMINUM CAN', correctBin: 'recycling', size: 100, image: 'images/aluminum_can.png', bonus: 0 },
+            { name: 'APPLE CORE', correctBin: 'compost', size: 100, image: 'images/apple_core.png', bonus: 0 },
+            { name: 'BANANA PEEL', correctBin: 'compost', size: 100, image: 'images/banana_peel.png', bonus: 0 },
+            { name: 'COFFEE GROUNDS', correctBin: 'compost', size: 100, image: 'images/coffee_grounds.png', bonus: 0 },
+            { name: 'CHOCOLATE WRAPPER', correctBin: 'waste', size: 100, image: 'images/candy_wrapper.png', bonus: 0 },
+            { name: 'USED TISSUE', correctBin: 'waste', size: 100, image: 'images/used_tissue.png', bonus: 0 },
+            { name: 'STYROFOAM CUP', correctBin: 'waste', size: 100, image: 'images/styrofoam_cup.png', bonus: 0 }
+        ];
+
+        const gravity = 0.5;
+        const friction = 0.98;
+
+        // Preload images
+        const trashImages = {};
+        const binImages = {};
+        const lidImages = {};
+        let backgroundImage = new Image();
+        backgroundImage.src = 'images/background.jpg';
+        let imagesLoaded = 0;
+        const totalImages = trashTypes.length + bins.length * 2 + 1;
+
+        function preloadImages() {
+            backgroundImage.onload = () => {
+                imagesLoaded++;
+            };
+            backgroundImage.onerror = () => {
+                console.error('Failed to load background image');
+                imagesLoaded++;
+            };
+
+            trashTypes.forEach(trash => {
+                const img = new Image();
+                img.src = trash.image;
+                img.onload = () => {
+                    imagesLoaded++;
+                };
+                img.onerror = () => {
+                    console.error(`Failed to load image: ${trash.image}`);
+                    imagesLoaded++;
+                };
+                trashImages[trash.name] = img;
+            });
+
+            bins.forEach(bin => {
+                const binImg = new Image();
+                binImg.src = bin.binImage;
+                binImg.onload = () => {
+                    imagesLoaded++;
+                };
+                binImg.onerror = () => {
+                    console.error(`Failed to load image: ${bin.binImage}`);
+                    imagesLoaded++;
+                };
+                binImages[bin.type] = binImg;
+
+                const lidImg = new Image();
+                lidImg.src = bin.lidImage;
+                lidImg.onload = () => {
+                    imagesLoaded++;
+                };
+                lidImg.onerror = () => {
+                    console.error(`Failed to load image: ${bin.lidImage}`);
+                    imagesLoaded++;
+                };
+                lidImages[bin.type] = lidImg;
+            });
+        }
+        preloadImages();
+
+        class Trash {
+            constructor() {
+                const type = trashTypes[Math.floor(Math.random() * trashTypes.length)];
+                this.x = canvas.width / 2;
+                this.y = canvas.height - 100;
+                this.vx = 0;
+                this.vy = 0;
+                this.type = type.name;
+                this.correctBin = type.correctBin;
+                this.size = type.size;
+                this.image = trashImages[type.name];
+                this.bonus = type.bonus || 0;
+                this.isThrown = false;
+                this.rotation = 0;
+                this.rotSpeed = 0;
+                this.fallingIntoBin = false;
+                this.opacity = 1;
+                this.shrink = 1;
+                this.countedAsMiss = false;
+            }
+
+            draw() {
+                if (this.opacity <= 0 || this.shrink <= 0) return;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.scale(this.shrink, this.shrink);
+                ctx.globalAlpha = this.opacity;
+
+                if (this.image && this.image.complete) {
+                    const aspectRatio = this.image.width / this.image.height;
+                    let drawWidth = this.size;
+                    let drawHeight = this.size;
+                    if (aspectRatio > 1) {
+                        drawHeight = this.size / aspectRatio;
+                    } else {
+                        drawWidth = this.size * aspectRatio;
+                    }
+                    ctx.drawImage(this.image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+                } else {
+                    ctx.fillStyle = '#ccc';
+                    ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                }
+
+                ctx.restore();
+
+                if (!this.isThrown && !this.fallingIntoBin) {
+                    this.drawTrajectory();
+                }
+            }
+
+            drawTrajectory() {
+                const steps = 50;
+                let tx = this.x;
+                let ty = this.y;
+
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(255,0,0,0.9)';
+                ctx.lineWidth = 3;
+                ctx.moveTo(tx, ty);
+                const maxHorizontal = 300;
+                const hVel = 10 * Math.sin(angle);
+                for (let i = 0; i < steps; i++) {
+                    tx += hVel;
+                    if (tx > canvas.width || tx < 0) break;
+                    ctx.lineTo(tx, ty);
+                }
+                ctx.stroke();
+
+                if (chargingPower) {
+                    tx = this.x;
+                    ty = this.y;
+                    let tvx = power * 0.4 * Math.sin(angle);
+                    let tvy = -power * 0.4;
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(0,255,0,0.9)';
+                    ctx.lineWidth = 3;
+                    ctx.moveTo(tx, ty);
+                    for (let i = 0; i < steps; i++) {
+                        tvy += gravity;
+                        tx += tvx;
+                        ty += tvy;
+                        tvx *= friction;
+                        tvy *= friction;
+                        if (ty > canvas.height || tx > canvas.width || tx < 0) break;
+                        ctx.lineTo(tx, ty);
+                    }
+                    ctx.stroke();
+                }
+            }
+
+            update() {
+                if (gameOver) return;
+
+                if (this.isThrown && !this.fallingIntoBin) {
+                    this.vy += gravity;
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.vx *= friction;
+                    this.vy *= friction;
+                    this.rotation += this.rotSpeed;
+
+                    if (this.y > canvas.height + this.size || this.x < -this.size || this.x > canvas.width + this.size) {
+                        if (!this.countedAsMiss) {
+                            misses++;
+                            combo = 0;
+                            showMessage('MISSED! COMBO RESET.');
+                            this.countedAsMiss = true;
+                            spawnNewTrash();
+                        }
+                        return;
+                    }
+
+                    bins.forEach(bin => {
+                        if (this.x > bin.x + 10 && this.x < bin.x + bin.width - 10 &&
+                            this.y > bin.y - this.size && this.y < bin.y + 20 &&
+                            this.vy > 0) {
+                            this.fallingIntoBin = true;
+                            this.binX = bin.x + bin.width / 2;
+                            this.binY = bin.y + bin.height - 10;
+                            this.vx = 0;
+                            this.vy = 0;
+                            this.rotSpeed = 0;
+
+                            if (bin.type === this.correctBin) {
+                                combo++;
+                                const points = 1 + this.bonus + Math.floor(combo / 3);
+                                score += points;
+                                showMessage(`CORRECT BIN! +${points} POINTS`);
+                                bin.targetLidAngle = Math.PI / 3;
+
+                                if (score >= targetScore) {
+                                    gameOver = true;
+                                    showWinMessage();
+                                    return;
+                                }
+                            } else {
+                                misses++;
+                                combo = 0;
+                                showMessage('WRONG BIN!');
+                                bin.targetLidAngle = -Math.PI / 6;
+                            }
+                            spawnNewTrash();
+                        }
+                    });
+                }
+            }
+        }
+
+        function drawBackground() {
+            if (backgroundImage && backgroundImage.complete) {
+                ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+            } else {
+                const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height - 150);
+                skyGradient.addColorStop(0, '#87ceeb');
+                skyGradient.addColorStop(1, '#e0f7fa');
+                ctx.fillStyle = skyGradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height - 150);
+
+                const groundGradient = ctx.createLinearGradient(0, canvas.height - 150, 0, canvas.height);
+                groundGradient.addColorStop(0, '#4caf50');
+                groundGradient.addColorStop(1, '#388e3c');
+                ctx.fillStyle = groundGradient;
+                ctx.fillRect(0, canvas.height - 150, canvas.width, 150);
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(150, 100, 40, 0, Math.PI * 2);
+                ctx.arc(180, 90, 50, 0, Math.PI * 2);
+                ctx.arc(210, 100, 40, 0, Math.PI * 2);
+                ctx.arc(160, 120, 30, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.beginPath();
+                ctx.arc(500, 120, 50, 0, Math.PI * 2);
+                ctx.arc(530, 110, 60, 0, Math.PI * 2);
+                ctx.arc(560, 120, 50, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffeb3b';
+                ctx.beginPath();
+                ctx.arc(700, 80, 40, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(255, 235, 59, 0.5)';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2;
+                    const length = 60;
+                    const x1 = 700 + Math.cos(angle) * 40;
+                    const y1 = 80 + Math.sin(angle) * 40;
+                    const x2 = 700 + Math.cos(angle) * length;
+                    const y2 = 80 + Math.sin(angle) * length;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function drawBins() {
+            bins.forEach(bin => {
+                bin.lidAngle += (bin.targetLidAngle - bin.lidAngle) * 0.15;
+                if (Math.abs(bin.targetLidAngle - bin.lidAngle) < 0.01) bin.targetLidAngle = 0;
+
+                ctx.save();
+                ctx.translate(bin.x + bin.width / 2, bin.y);
+
+                const binImg = binImages[bin.type];
+                if (binImg && binImg.complete) {
+                    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowOffsetY = 5;
+                    ctx.drawImage(binImg, -bin.width / 2, -bin.height, bin.width, bin.height);
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetY = 0;
+                } else {
+                    ctx.fillStyle = '#808080';
+                    ctx.fillRect(-bin.width / 2, -bin.height, bin.width, bin.height);
+                }
+
+                const lidImg = lidImages[bin.type];
+                if (lidImg && lidImg.complete) {
+                    ctx.save();
+                    ctx.translate(0, -bin.height);
+                    ctx.rotate(bin.lidAngle);
+                    ctx.drawImage(lidImg, -bin.width / 2, -15, bin.width, 15);
+                    ctx.restore();
+                } else {
+                    ctx.save();
+                    ctx.translate(0, -bin.height);
+                    ctx.rotate(bin.lidAngle);
+                    ctx.fillStyle = '#666';
+                    ctx.fillRect(-bin.width / 2, -15, bin.width, 15);
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(-bin.width / 2, -15, bin.width, 15);
+                    ctx.restore();
+                }
+
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(bin.type.toUpperCase(), 0, -bin.height - 20);
+
+                ctx.restore();
+            });
+        }
+
+        function spawnNewTrash() {
+            if (gameOver) return;
+            trash = new Trash();
+            power = 0;
+            chargingPower = false;
+            powerFill.style.width = '0%';
+            angle = 0;
+            directionLocked = false;
+            if (score === 0 && misses === 0) {
+                showTrashNamePopup(trash.type);
+            }
+        }
+
+        function showMessage(text) {
+            if (gameOver) return;
+            if (messageTimeout) {
+                clearTimeout(messageTimeout);
+            }
+            message.textContent = text;
+            message.style.display = 'block';
+            message.style.opacity = '0';
+            message.style.transform = 'translate(-50%, -50%) scale(1)';
+            if (text.includes('CORRECT')) {
+                message.style.color = '#008000';
+            } else if (text.includes('WRONG') || text.includes('MISSED')) {
+                message.style.color = '#ff0000';
+            }
+            setTimeout(() => {
+                message.style.opacity = '1';
+                message.style.transform = 'translate(-50%, -50%) scale(0.9)';
+                messageTimeout = setTimeout(() => {
+                    if (!gameOver) {
+                        message.style.opacity = '0';
+                        setTimeout(() => {
+                            message.style.display = 'none';
+                            if (trash && !gameOver) {
+                                showTrashNamePopup(trash.type);
+                            }
+                        }, 300);
+                    }
+                }, 1000);
+            }, 10);
+        }
+
+        function showWinMessage() {
+            if (messageTimeout) {
+                clearTimeout(messageTimeout);
+            }
+            message.innerHTML = `Congratulations! You've won!<br>Final Score: ${score}<br><button id="playAgainButton">Play Again</button>`;
+            message.style.display = 'block';
+            message.style.opacity = '1';
+            message.style.transform = 'translate(-50%, -50%) scale(1)';
+            message.style.color = '#008000';
+
+            const playAgainButton = document.getElementById('playAgainButton');
+            playAgainButton.addEventListener('click', resetGame);
+        }
+
+        function showTrashNamePopup(trashName) {
+            if (gameOver) return;
+            if (messageTimeout) {
+                clearTimeout(messageTimeout);
+            }
+            message.textContent = trashName;
+            message.style.display = 'block';
+            message.style.color = '#2f4f4f';
+            message.style.opacity = '0';
+            message.style.transform = 'translate(-50%, -50%) scale(0.9)';
+            setTimeout(() => {
+                message.style.opacity = '1';
+                message.style.transform = 'translate(-50%, -50%) scale(1)';
+                messageTimeout = setTimeout(() => {
+                    message.style.opacity = '0';
+                    setTimeout(() => {
+                        if (!gameOver) {
+                            message.style.display = 'none';
+                        }
+                    }, 300);
+                }, 1000);
+            }, 10);
+        }
+
+        function resetGame() {
+            score = 0;
+            misses = 0;
+            combo = 0;
+            trash = null;
+            power = 0;
+            chargingPower = false;
+            angle = 0;
+            directionLocked = false;
+            gameOver = false;
+            message.style.display = 'none';
+            powerFill.style.width = '0%';
+            if (messageTimeout) {
+                clearTimeout(messageTimeout);
+            }
+            spawnNewTrash();
+        }
+
+        function updateMeters() {
+            if (gameOver) return;
+            if (chargingPower && power < 100) {
+                power += 2;
+                powerFill.style.width = `${power}%`;
+            }
+        }
+
+        const keys = {
+            'a': false,
+            'd': false
+        };
+
+        window.addEventListener('keydown', (e) => {
+            if (gameOver) return;
+            if (trash && !trash.isThrown && !directionLocked && e.key.toLowerCase() in keys) {
+                e.preventDefault();
+                keys[e.key.toLowerCase()] = true;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key.toLowerCase() in keys) {
+                e.preventDefault();
+                keys[e.key.toLowerCase()] = false;
+            }
+        });
+
+        function updateAngle() {
+            if (gameOver) return;
+            if (trash && !trash.isThrown && !directionLocked) {
+                if (keys['a']) {
+                    angle -= 0.03;
+                }
+                if (keys['d']) {
+                    angle += 0.03;
+                }
+                angle = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, angle));
+            }
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (gameOver) return;
+            if (trash && !trash.isThrown && e.button === 0) {
+                chargingPower = true;
+                directionLocked = true;
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (gameOver) return;
+            if (trash && !trash.isThrown && e.button === 0 && chargingPower) {
+                chargingPower = false;
+                const throwPower = Math.max(power, 20);
+                trash.isThrown = true;
+                trash.vx = throwPower * 0.4 * Math.sin(angle);
+                trash.vy = -throwPower * 0.4;
+                trash.rotSpeed = throwPower * 0.005 * (Math.random() > 0.5 ? 1 : -1);
+            }
+        });
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            drawBins();
+            if (trash) {
+                trash.update();
+                trash.draw();
+            } else if (!gameOver) {
+                spawnNewTrash();
+            }
+            updateMeters();
+            updateAngle();
+
+            scoreBoard.textContent = `Score: ${score} | Misses: ${misses} | Combo: ${combo}x`;
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Intro screen button handlers
+        howToPlayButton.addEventListener('click', () => {
+            introScreen.style.display = 'none';
+            howToPlayOverlay.style.display = 'flex';
+        });
+
+        playButtonIntro.addEventListener('click', () => {
+            introScreen.style.display = 'none';
+            gameContainer.style.display = 'block';
+            scoreBoard.style.display = 'block';
+            objectiveDisplay.style.display = 'block';
+            spawnNewTrash();
+            gameLoop();
+        });
+
+        backButton.addEventListener('click', () => {
+            howToPlayOverlay.style.display = 'none';
+            introScreen.style.display = 'flex';
+        });
+    </script>
+</body>
+</html>
